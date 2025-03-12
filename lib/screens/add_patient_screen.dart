@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:questionmakerteacher/models/answerer.dart';
+import 'package:questionmakerteacher/models/theme_data.dart';
 import 'package:questionmakerteacher/stringextension.dart';
 
 class AddPatientScreen extends StatefulWidget {
@@ -142,75 +143,99 @@ class _AddPatientState extends State<AddPatientScreen> {
       appBar: AppBar(
         title: const Text("Add Child"),
       ),
-      body: Padding(
-        padding: EdgeInsets.all(25),
-        child: Center(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                TextFormField(
-                  decoration: const InputDecoration(labelText: "Last Name:"),
-                  validator: (value) {
-                    if (value == null || value.isEmpty || value.trim().length < 2
-                        || value.trim().length > 50) {
-                      return 'Input value must be between 2 and 50 characters long';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    _enteredLastName = value!;
-                  },
-                ),
-                const SizedBox(height: 50,),
-                TextFormField(
-                  decoration: const InputDecoration(labelText: "Code:"),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      //This will definitely need to be built out.
-                      return "Invalid Patient Code Detected";
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    _enteredPatientCode = value!;
-                  },
-                ),
-                const SizedBox(height: 25,),
-                DropdownButtonFormField(
-                  decoration: const InputDecoration(
-                    label: Text(
-                        "Which option more closely describes your relationship with the child?",
-                      style: TextStyle(fontSize: 12),
-                    ),
+      body: GradientContainer(
+          child: Padding(
+            padding: EdgeInsets.all(25),
+            child: Card(
+              color: Color(0xFF484747),
+              child: Padding(
+                padding: EdgeInsets.all(10),
+                child: Center(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          decoration: const InputDecoration(labelText: "Last Name:"),
+                          validator: (value) {
+                            if (value == null || value.isEmpty || value.trim().length < 2
+                                || value.trim().length > 50) {
+                              return 'Input value must be between 2 and 50 characters long';
+                            }
+                            return null;
+                          },
+                          onSaved: (value) {
+                            _enteredLastName = value!;
+                          },
+                        ),
+                        const SizedBox(height: 50,),
+                        TextFormField(
+                          decoration: const InputDecoration(labelText: "Code:"),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              //This will definitely need to be built out.
+                              return "Invalid Patient Code Detected";
+                            }
+                            return null;
+                          },
+                          onSaved: (value) {
+                            _enteredPatientCode = value!;
+                          },
+                        ),
+                        const SizedBox(height: 25,),
+                        DropdownButtonFormField(
+                            dropdownColor: Theme.of(context).colorScheme.secondary,
+                            decoration: const InputDecoration(
+                              label: Text(
+                                "Which option more closely describes your relationship with the child?",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white
+                                ),
+                              ),
 
+                            ),
+                            items: [
+                              const DropdownMenuItem(
+                                child: Text(
+                                  "",
+                                  style: TextStyle(
+                                    color: Colors.white
+                                  ),
+                                ),
+                                value: null,
+                              ),
+                              for (final selection in ParentOrTeacher.values)
+                                DropdownMenuItem(
+                                  child: Text(
+                                    selection.name.capitalize(),
+                                      style: TextStyle(
+                                          color: Colors.white
+                                      )
+                                  ), value: selection,
+                                )
+                            ],
+                            onChanged: (value) => _parentOrTeacher = value
+                        ),
+                        const SizedBox(height: 50,),
+                        ElevatedButton(
+                            onPressed: _addPatientPressed,
+                            style: ElevatedButton.styleFrom(
+                                minimumSize: const Size(120, 40)
+                            ),
+                            child: (_isChecking4PatientData) ? const SizedBox(
+                              height: 25,
+                              width: 25,
+                              child: CircularProgressIndicator(),
+                            ) : const Text("Add Patient")
+                        )
+                      ],
+                    ),
                   ),
-                    items: [
-                      const DropdownMenuItem(
-                        child: Text(""),
-                        value: null,
-                      ),
-                      for (final selection in ParentOrTeacher.values)
-                        DropdownMenuItem(child: Text(selection.name.capitalize()), value: selection,)
-                    ],
-                    onChanged: (value) => _parentOrTeacher = value
                 ),
-                const SizedBox(height: 50,),
-                ElevatedButton(
-                  onPressed: _addPatientPressed,
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(120, 40)
-                  ),
-                  child: (_isChecking4PatientData) ? const SizedBox(
-                    height: 25,
-                    width: 25,
-                    child: CircularProgressIndicator(),
-                  ) : const Text("Add Patient")
-                )
-              ],
-            ),
-          ),
-        ),
+              ),
+            )
+          )
       ),
     );
   }

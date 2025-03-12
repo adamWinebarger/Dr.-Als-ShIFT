@@ -10,7 +10,8 @@ import 'package:questionmakerteacher/screens/patient_list_screen.dart';
 import 'package:sf_symbols/sf_symbols.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
 
-final _firebaseAuth = FirebaseAuth.instance;
+var _firebaseAuth = FirebaseAuth.instance;
+
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -69,7 +70,7 @@ class _AuthScreenState extends State<AuthScreen> {
         */
         //print("In the start of isLogin");
 
-        final userCreds = await _firebaseAuth.signInWithEmailAndPassword(
+        await _firebaseAuth.signInWithEmailAndPassword(
             email: _enteredEmail, password: _enteredPassword);
 
       } else {

@@ -7,15 +7,18 @@ import 'package:questionmakerteacher/models/theme_data.dart';
 import 'package:questionmakerteacher/screens/add_patient_screen.dart';
 import 'package:questionmakerteacher/screens/patient_view.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'auth.dart';
 
 import '../models/patient.dart';
 
-final _authenticatedUser = FirebaseAuth.instance.currentUser!;
+//User? _authenticatedUser = FirebaseAuth.instance.currentUser;
 
 class PatientListScreen extends StatefulWidget {
   const PatientListScreen({super.key, required this.isAdmin});
 
   final bool isAdmin;
+  //final User? authenticatedUser;
+
   
   @override
   State<StatefulWidget> createState() {
@@ -31,21 +34,27 @@ class _PatientListScreenState extends State<PatientListScreen> {
   final _formKey = GlobalKey<FormState>();
   final CollectionReference _crList = FirebaseFirestore.instance.collection("Patients");
   final DocumentReference _currentUserDoc = FirebaseFirestore.instance.collection("users").
-      doc(_authenticatedUser.uid);
+      doc(FirebaseAuth.instance.currentUser?.uid);
+  final _authenticatedUser = FirebaseAuth.instance.currentUser;
   //QueryDocumentSnapshot<Object?>? _foundChild;
 
   final _noPatientsWidget = const Center(child: Text("You have no patients to view"));
 
   void _logoutButtonPressed() {
+    print("Logging out");
+
     FirebaseAuth.instance.signOut();
   }
 
   Future<List<String>> _getApprovedPatients() async {
+    await FirebaseAuth.instance.currentUser?.reload();
+
     final currentUserDoc = await _currentUserDoc.get();
     final currentUserData = currentUserDoc.data() as Map<String, dynamic>;
     var viewableStudents = (currentUserData.containsKey('viewableStudents')) ?
       (currentUserData['viewableStudents'] as List?)?.map((item) => item as String).toList()
           ?? [] : [];
+    print(currentUserData['firstName']);
     //print(viewableStudents);
     var viewableChildren = currentUserData.containsKey('viewableChildren') ?
       (currentUserData['viewableChildren'] as List?)?.map((item) => item as String).toList()
@@ -53,6 +62,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
     //List<String> patientList = (map2List != null && map2List.isNotEmpty) ? map2List : [];
     _viewableStudents = (viewableStudents.isNotEmpty) ? viewableStudents as List<String> : [];
     _viewableChildren = (viewableChildren.isNotEmpty) ? viewableChildren as List<String> : [];
+    print([...viewableChildren, ...viewableStudents]);
     return [...viewableChildren, ...viewableStudents];
   }
 
@@ -60,11 +70,13 @@ class _PatientListScreenState extends State<PatientListScreen> {
   * So instead of looking at the viewable children or viewable students, we need to essentially run
   * a query for any patients that have an administratorCode set to the UUID of the current admin user*/
   Future<List<String>> _getApprovedAdminPatients() async {
+    await FirebaseAuth.instance.currentUser?.reload();
+    //this is a cheesy way of doing this and we should come back and better encapsulate this at some point
+
     final currentUserDoc = _currentUserDoc.get();
     List<String> viewablePatients = [];
-
     final QuerySnapshot createdPatientsQuery = await FirebaseFirestore.instance.collection("Patients")
-      .where("AdministratorCode", isEqualTo: _authenticatedUser.uid).get();
+      .where("AdministratorCode", isEqualTo: _authenticatedUser?.uid).get();
 
     for (var docSnapshot in createdPatientsQuery.docs) {
       Map<String, dynamic> docData = docSnapshot.data() as Map<String, dynamic>;
@@ -137,6 +149,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
   void initState() {
     super.initState();
     _setupPushNotifs();
+    //print(widget.isAdmin);
     if (widget.isAdmin) {
       _getApprovedAdminPatients().then((value) {
         setState(() {

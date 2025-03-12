@@ -26,7 +26,7 @@ class App extends StatelessWidget {
       theme: ThemeData.light().copyWith(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(0xFF92b662),
-          primary: Color(0xFF92b662),
+            primary: Color(0xFF92b662),
           secondary: Color(0xFF484747),
           //brightness: Brightness.light,
           surface: Color(0xFF92b662),
@@ -129,11 +129,11 @@ class App extends StatelessWidget {
                         //check if adminID exists within this doc
                         if (userData != null && userData.containsKey('adminID')) {
 
-                          return const PatientListScreen(isAdmin: true);
+                          return PatientListScreen(isAdmin: true);
                         }
 
                         //case for when we don't find an adminID
-                        return const PatientListScreen(isAdmin: false);
+                        return PatientListScreen(isAdmin: false);
                       } else {
                         return const AuthScreen();
                       }
@@ -176,13 +176,13 @@ class App extends StatelessWidget {
           //Pushing to PatientScreen in Admin Mode
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const PatientListScreen(isAdmin: true))
+            MaterialPageRoute(builder: (context) => PatientListScreen(isAdmin: true))
           );
         } else {
           //Regular PatientListScreen
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const PatientListScreen(isAdmin: false))
+            MaterialPageRoute(builder: (context) => PatientListScreen(isAdmin: false))
           );
         }
       }),
