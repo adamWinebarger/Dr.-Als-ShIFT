@@ -4,16 +4,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:questionmakerteacher/models/answerer.dart';
 
 import 'package:questionmakerteacher/models/patient.dart';
+import 'package:questionmakerteacher/models/question.dart';
 import 'package:questionmakerteacher/models/questionnaire.dart';
 import 'package:questionmakerteacher/models/theme_data.dart';
 import 'package:questionmakerteacher/stringextension.dart';
 
 import '../models/answer_data.dart';
 
-final _authenticatedUser = FirebaseAuth.instance.currentUser!;
+//final _authenticatedUser = FirebaseAuth.instance.currentUser!;
 
 class QuestionnaireScreen extends StatefulWidget {
-  const QuestionnaireScreen({super.key, required this.patientInQuestion, required this.parentOrTeacher});
+  QuestionnaireScreen({super.key, required this.patientInQuestion, required this.parentOrTeacher});
 
   final Patient patientInQuestion;
   final ParentOrTeacher parentOrTeacher;
@@ -24,10 +25,11 @@ class QuestionnaireScreen extends StatefulWidget {
 
 class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
 
+  final _authendicatedUser = FirebaseAuth.instance.currentUser!;
+
   final _formKey = GlobalKey<FormState>();
   final List<Answers> _answers = [];
-  final DocumentReference _currentUserDoc = FirebaseFirestore.instance.collection("users").
-    doc(_authenticatedUser.uid);
+  late final DocumentReference _currentUserDoc;
   final Map<String, dynamic> _answerMap = {};
 
   late Answerer _currentAnswerer;
@@ -106,11 +108,11 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
 
 
     for (int i = 0; i < selectedQuestionsList.length; i++) {
-      _answerMap[selectedQuestionsList[i]] = _answers[i].name;
+      _answerMap[selectedQuestionsList[i].question] = _answers[i].name;
     }
 
     //print(_currentAnswerer.parentOrTeacher);
-    final answerDocumentPath = "${_authenticatedUser.uid} ${DateTime.now()}";
+    final answerDocumentPath = "${_authendicatedUser.uid} ${DateTime.now()}";
     if (_formKey.currentState!.validate()) {
       await FirebaseFirestore.instance.collection('Patients')
         .doc(widget.patientInQuestion.path).collection('Answers').doc(answerDocumentPath)
@@ -137,14 +139,19 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
   @override
   void initState() {
     super.initState();
+
+    //This may not work so definitely be sure to run some tests before we assume it's good.
+    //If this doesn't work, then just pass in _authentedicatedUser as an input parameter to the companion Widget Class
+    _currentUserDoc = FirebaseFirestore.instance.collection("users").doc(_authendicatedUser.uid);
+
     setState(() {
       _setCurrentAnswerer();
       _questions = widget.parentOrTeacher == ParentOrTeacher.parent
           ? (widget.patientInQuestion.parentQuestions)
-          .map((item) => item.toString())
+          .map((item) => item.question) //do we want to add an additional catch for the possibility that item might not have a "question key"
           .toList()
           : (widget.patientInQuestion.teacherQuestions)
-          .map((item) => item.toString())
+          .map((item) => item.question) //In theory this should still work exactly the same.
           .toList();
     });
   }
@@ -223,7 +230,6 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                                 //color: Colors.white
                               ),
                             ),
-
                           ),
                           items: [
                             for (final selection in TimeOfInteraction.values)
@@ -260,6 +266,5 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
         ),
       )
     );
-
   }
 }
