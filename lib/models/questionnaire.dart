@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:questionmakerteacher/models/question.dart';
 
 enum TimeOfInteraction {
   morning,
@@ -19,11 +20,12 @@ enum Answers {
 class Questionnaire {
   Questionnaire({
     required this.lastName, required this.firstName,
-    required this.timeOfDay
+    required this.timeOfDay, required this.answers, required this.totalPoints
   });
 
   final String lastName, firstName;
-  TimeOfDay timeOfDay;
-  Map<String, Answers> answers = {};
+  final TimeOfDay timeOfDay;
+  final Map<String, Answer> answers;
+  final int totalPoints;
 
 }

@@ -36,8 +36,9 @@ class Question {
 class Answer extends Question {
 
   final Answers answer;
+  final int points;
 
-  Answer(Question question, this.answer) : super(question.question, question.isReverseScored);
+  Answer(Question question, this.answer, this.points) : super(question.question, question.isReverseScored);
 
   factory Answer.fromDynamic(Map<String, dynamic> item) {
     String question;
@@ -46,16 +47,23 @@ class Answer extends Question {
 
     if (!item.containsKey("question")) {
       question = item.keys.first;
-      answer = Answers.values.firstWhere((e) => e.toString() == item["question"],
+      answer = Answers.values.firstWhere((e) => e.toString() == item[question],
         orElse: () => Answers.notAtAll);
 
-      return Answer(Question(question, false), answer);
+      final points = answer.index;
+
+
+
+      return Answer(Question(question, false), answer, points);
     } else {
       question = item["question"].toString();
       isReverseScored = item.containsKey("isReversedScoring") ? item["isReverseScoring"] as bool : false;
       answer = Answers.values.firstWhere((e) => e.toString() == item["answer"],
         orElse: () => Answers.notAtAll);
-      return Answer(Question(question, isReverseScored), answer);
+
+      int points = item.containsKey("points") ? item["points"] as int : answer.index;
+
+      return Answer(Question(question, isReverseScored), answer, points);
     }
   }
 
