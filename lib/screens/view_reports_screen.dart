@@ -8,6 +8,7 @@ import 'package:questionmakerteacher/models/report.dart';
 import 'package:questionmakerteacher/models/patient.dart';
 import 'package:questionmakerteacher/models/questionnaire.dart';
 import 'package:questionmakerteacher/models/theme_data.dart';
+import 'package:questionmakerteacher/screens/patient_dataview_screen.dart';
 import 'package:questionmakerteacher/screens/patient_report_screen.dart';
 import 'package:questionmakerteacher/stringextension.dart';
 
@@ -22,11 +23,14 @@ enum _TimeOfDay {
 
 class PatientReportsListScreen extends StatefulWidget {
   const PatientReportsListScreen({super.key, required this.currentPatientString,
-    required this.parentOrTeacher, required this.teacherCanViewParentReports});
+    required this.parentOrTeacher, required this.teacherCanViewParentReports,
+    required this.currentPatientFirstName
+  });
 
   final String currentPatientString;
   final ParentOrTeacher parentOrTeacher;
   final bool teacherCanViewParentReports;
+  final String currentPatientFirstName;
 
   @override
   State<StatefulWidget> createState() => _PatientReportsListScreenState();
@@ -41,11 +45,16 @@ class _PatientReportsListScreenState extends State<PatientReportsListScreen> {
 
   bool _isFetchingData = false;
   List<Report> _reportsList = [];
-  DateTime _toDate = DateTime.now(), _fromDate = DateTime.now().subtract(const Duration(days: 7));
+  DateTime _toDate = DateTime.now();
+  DateTime? _fromDate;
   //DateTime _toDate = DateTime.now(), _fromDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
 
   String _selectedParentTeacherFilter = "All";
   _TimeOfDay _selectedTimeOfDay = _TimeOfDay.all;
+  
+  int _pointsEarned = 0, _totalPoints = 0;
+  String _pointsEarnedStatement = "";
+  Lookback _lookback = Lookback.allTime;
 
 
   Future<List<Report>> _getReportListFromDatabase() async {
@@ -83,6 +92,17 @@ class _PatientReportsListScreenState extends State<PatientReportsListScreen> {
       reportQuery = reportQuery.where("timeOfDay", isEqualTo: _selectedTimeOfDay.name);
     }
 
+    //Catches for sorting date range. We're probably going to want some kind of settings dropdown
+    //menu thing but at least it looks like we were thinking ahead a bit for this stuff.
+    
+    if (_fromDate != null) {
+
+    }
+
+    if (_toDate != DateTime.now()) {
+
+    }
+
     final QuerySnapshot reportQuerySnapshot = await reportQuery.get();
     print("Made it to here");
 
@@ -95,6 +115,17 @@ class _PatientReportsListScreenState extends State<PatientReportsListScreen> {
     }
 
     //So now we need to retrieve the Documents from our Query and then
+    _pointsEarned = reportsList.fold(0, (sum, report) => sum += report.pointsEarned);
+    _totalPoints = reportsList.fold(0, (sum, report) => sum += report.pointsTotal);
+    _pointsEarnedStatement = "${widget.currentPatientFirstName} has earned $_pointsEarned/$_totalPoints";
+
+    if (_toDate != DateTime.now()) {
+      _pointsEarnedStatement += " in the timeframe listed";
+    } else if (_fromDate != null) {
+      String add2 = "";
+
+
+    }
 
     return reportsList;
   }
@@ -132,6 +163,16 @@ class _PatientReportsListScreenState extends State<PatientReportsListScreen> {
               child: Center(
                 child: Column(
                   children: [
+                    Padding(
+                      padding: EdgeInsets.all(15),
+                      child: RichText(
+                        text: TextSpan(
+                            text: "${widget.currentPatientFirstName} has earned $_pointsEarned/$_totalPoints",
+                            style: Theme.of(context).textTheme.titleMedium
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                     Expanded(
                         child: Container(
                           decoration: BoxDecoration(
@@ -152,7 +193,7 @@ class _PatientReportsListScreenState extends State<PatientReportsListScreen> {
                                   ),
                                   child: ListTile(
                                     title: Text("${selectedReport.lastName}, ${selectedReport.firstName} (${selectedReport.parentOrTeacher.name.capitalize()})"),
-                                    subtitle: Text("${selectedReport.timeOfDay.capitalize()} - ${selectedReport.timestamp}"),
+                                    subtitle: Text("${selectedReport.timeOfDay.capitalize()} - ${selectedReport.timestamp}\nPoints Earned: ${selectedReport.pointsEarned}/${selectedReport.pointsTotal}"),
                                     onTap: () {
                                       Navigator.push(
                                           context,

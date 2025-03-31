@@ -125,7 +125,8 @@ class _PatientViewState extends State<PatientView> {
                       context,
                       MaterialPageRoute(builder: (context) => PatientReportsListScreen(
                           currentPatientString: currentPatientReferenceString, parentOrTeacher: widget.parentOrTeacher,
-                          teacherCanViewParentReports: widget.currentPatient.teacherCanViewParentAnswers
+                          teacherCanViewParentReports: widget.currentPatient.teacherCanViewParentAnswers,
+                          currentPatientFirstName: widget.currentPatient.firstName,
                       ))
                   );
                 },

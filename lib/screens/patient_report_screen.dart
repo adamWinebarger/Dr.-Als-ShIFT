@@ -48,8 +48,13 @@ class PatientReportScreen extends StatelessWidget {
                     ),
                     //Subtitle
                     TextSpan(
-                        text: "${currentReport.timeOfDay.capitalize()} - ${_formatDate(currentReport.timestamp)}",
+                        text: "${currentReport.timeOfDay.capitalize()} - ${_formatDate(currentReport.timestamp)}\n",
                         style: Theme.of(context).textTheme.titleMedium
+                    ),
+                    //Point total stuff
+                    TextSpan(
+                      text: "Points earned: ${currentReport.pointsEarned}/${currentReport.pointsTotal}",
+                      style: Theme.of(context).textTheme.titleMedium
                     )
                   ]
                   ),
@@ -67,8 +72,8 @@ class PatientReportScreen extends StatelessWidget {
                     child: ListView.builder(
                       itemCount: currentReport.answers.length,
                       itemBuilder: (context, index) {
-                        String key = currentReport.answers.keys.elementAt(index),
-                            value = _answerMap[currentReport.answers[key]]!;
+                        String key = currentReport.answers[index].question,
+                            value = "${_answerMap[currentReport.answers[index].answer]!.toString()} : ${currentReport.answers[index].points}/3";
 
                         return Container(
                           decoration: const BoxDecoration(

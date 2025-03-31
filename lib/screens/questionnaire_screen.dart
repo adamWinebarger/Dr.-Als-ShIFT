@@ -31,9 +31,11 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
   final List<Answers> _answers = [];
   late final DocumentReference _currentUserDoc;
   final Map<String, dynamic> _answerMap = {};
+  List<Answer> _answerList = [];
+  // List<Question> _questionList = [];
 
   late Answerer _currentAnswerer;
-  late List<String> _questions;
+  late List<Question> _questionList;
 
   int _count = 0;
   Answers? _selectedAnswer;
@@ -107,13 +109,28 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     print("Made it to here 3");
 
 
+    // for (int i = 0; i < selectedQuestionsList.length; i++) {
+    //   _answerMap[selectedQuestionsList[i].question] = _answers[i].name;
+    // }
+
     for (int i = 0; i < selectedQuestionsList.length; i++) {
-      _answerMap[selectedQuestionsList[i].question] = _answers[i].name;
+      //So this is a little bit convoluted. But we're essentially taking our corresponding Question object and
+      //answer and then doing our points calculation during the intantiation of our Answer object.
+      //
+      //I know there's definitely a better way of doing it but I'm feeling kind of lazy.
+      _answerList.add(Answer(_questionList[i], _answers[i],
+          _questionList[i].isReverseScored ? 3 - _answers[i].index : _answers[i].index));
     }
 
+    print("MAde it to here 4");
+
+    List<Map<String, dynamic>> answerMapList = _answerList.map((answer) => answer.toJson()).toList();
+
+    print("MAde it to here 5");
     //print(_currentAnswerer.parentOrTeacher);
     final answerDocumentPath = "${_authendicatedUser.uid} ${DateTime.now()}";
     if (_formKey.currentState!.validate()) {
+      print("Validated");
       await FirebaseFirestore.instance.collection('Patients')
         .doc(widget.patientInQuestion.path).collection('Answers').doc(answerDocumentPath)
         .set({
@@ -121,7 +138,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
           'answererLastName' : _currentAnswerer.lastName,
           'answererFirstName' : _currentAnswerer.firstName,
           'parentOrTeacher' : widget.parentOrTeacher.name,
-          'Answers' : _answerMap, //It looks like we aren't using any of the info from our Questionnaire class and instead are generating this all locally... wth
+          'Answers' : answerMapList, //Now we're actually passing in a List<Class> so we'll need to make sure the shit still loads right.
           'timeOfDay' : _selectedTimeOfInteraction!.name
       });
 
@@ -146,13 +163,9 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
 
     setState(() {
       _setCurrentAnswerer();
-      _questions = widget.parentOrTeacher == ParentOrTeacher.parent
+      _questionList = widget.parentOrTeacher == ParentOrTeacher.parent
           ? (widget.patientInQuestion.parentQuestions)
-          .map((item) => item.question) //do we want to add an additional catch for the possibility that item might not have a "question key"
-          .toList()
-          : (widget.patientInQuestion.teacherQuestions)
-          .map((item) => item.question) //In theory this should still work exactly the same.
-          .toList();
+          : (widget.patientInQuestion.teacherQuestions);
     });
   }
 
@@ -186,7 +199,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                     height: 75,
                     child: Text(
                       (_count > -1) ?
-                      _questions[_count] :
+                      _questionList[_count].question :
                       "Select the time of day that this questionnaire reflects:",
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
@@ -212,7 +225,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                             ElevatedButton(
                                 onPressed: _nextPressed,
                                 child: Text(
-                                    _count == _questions.length - 1 ?
+                                    _count == _questionList.length - 1 ?
                                     "Submit" : "Next"
                                 )
                             ),

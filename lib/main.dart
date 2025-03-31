@@ -66,6 +66,7 @@ class App extends StatelessWidget {
             //backgroundColor: Color(0xff388e3c)
             //color: Colors.white
            color: Colors.black,
+            
           ),
           titleLarge: TextStyle(
             color: Colors.black,

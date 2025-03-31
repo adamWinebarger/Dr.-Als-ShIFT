@@ -41,8 +41,8 @@ class Report {
     if (json['Answers'] is Map<String, dynamic>) {
 
       for (String key in json['Answers'].keys) {
-        Answers answer = json['Answers'].firstWhere((e) => e.name == json['Answers'][key]
-          , orElse: Answers.notAtAll
+        Answers answer = Answers.values.firstWhere((e) => e.name == json['Answers'][key]
+          , orElse: () => Answers.notAtAll
         );
 
         //Assume that legacy queestions are not reverseScored and that always will be the high value

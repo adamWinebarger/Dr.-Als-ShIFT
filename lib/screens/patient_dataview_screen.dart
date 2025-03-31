@@ -21,7 +21,7 @@ enum _TimeOfDay {
   all
 }
 
-enum _Lookback {
+enum Lookback {
   today,
   lastWeek,
   lastMonth,
@@ -57,7 +57,7 @@ class _PatientDataViewState extends State<PatientDataView> {
   int _currentQuestionNumber = 0;
   _TimeOfDay _timeOfDay = _TimeOfDay.all;
   String _selectedParentTeacherFilter = "All";
-  _Lookback _currentLookbackSelection = _Lookback.today;
+  Lookback _currentLookbackSelection = Lookback.today;
 
   List<AnswerData> _answerDataList = [];
 
@@ -67,12 +67,12 @@ class _PatientDataViewState extends State<PatientDataView> {
 
   late List<AnswerData> _patientDataView;
   late String _currentQuestion;
-  late final Map<String, _Lookback> _dateRangeMap = {
-    "Today" : _Lookback.today,
-    "Past Week" : _Lookback.lastWeek,
-    "Past Month" : _Lookback.lastMonth,
-    "All Time" : _Lookback.allTime,
-    "Select Date Range" : _Lookback.specificTimeframe
+  late final Map<String, Lookback> _dateRangeMap = {
+    "Today" : Lookback.today,
+    "Past Week" : Lookback.lastWeek,
+    "Past Month" : Lookback.lastMonth,
+    "All Time" : Lookback.allTime,
+    "Select Date Range" : Lookback.specificTimeframe
   };
 
   void _nextPressed() {
@@ -110,7 +110,7 @@ class _PatientDataViewState extends State<PatientDataView> {
     //query to look at docs within a given tim period (from and to will be adjustable)
     Query requisiteAnswersQuery = crList.where("Timestamp", isLessThanOrEqualTo: _toDate);
 
-    if (_currentLookbackSelection != _Lookback.allTime) {
+    if (_currentLookbackSelection != Lookback.allTime) {
       requisiteAnswersQuery = requisiteAnswersQuery.where("Timestamp", isGreaterThanOrEqualTo: _fromDate);
     }
 
@@ -120,11 +120,22 @@ class _PatientDataViewState extends State<PatientDataView> {
     }
 
     if (widget.parentOrTeacher == ParentOrTeacher.teacher && widget.teacherCanViewParentReports == false) {
+      print("teacherOnly fired");
       requisiteAnswersQuery = requisiteAnswersQuery.where("parentOrTeacher", isEqualTo: "teacher");
     } else if (_selectedParentTeacherFilter != "All") {
       requisiteAnswersQuery = requisiteAnswersQuery
           .where("parentOrTeacher", isEqualTo: (_selectedParentTeacherFilter == "Parent") ? "parent" : "teacher");
+    } else {
+      //forgot to add "All logic" here.... oops.
+      print("All Fired");
     }
+
+    /* Alright. So here we're going to need a catch to determine whether things are List<dynamic> or Map<String,dynamic>
+     * Might be good to have some type of type-check that handles things based on what's passed to it.
+     * Probably should just to a big re-write on this section because things are a little wonky as-is
+     *
+     * But this is going to fail as it's trying to show
+    */
 
     try {
       final QuerySnapshot requisiteAnswersQuerySnapshot = await requisiteAnswersQuery.get();
@@ -135,26 +146,48 @@ class _PatientDataViewState extends State<PatientDataView> {
         Map<String, dynamic> documentData = docSnapshot.data() as Map<String, dynamic>;
         //print('Data ${documentData['Answers']}');
         //Gotta do the same with our 'Answers' attribute within the doc, which is all we really want here
-        Map<String, dynamic> answers = documentData['Answers'];
-        for (String key in answers.keys) {
-          //print(answers[key]);
-          //Now in our forLoop, we gotta check if avList contains already contains the question
-          //shown in the key section, if it doesn't, then it needs to add the question into avList
-          //in addition to incrementing the corresponding value; and if it does, then it only needs
-          //to increment the corresponding enum value for the question
 
-          //So key is the "question" while value is the answer - and we need to increment the
-          //"Answer Map" by 1 any time a new answer pops, basically.
-          //print("Key: $key; value: ${answers[key]}");
+        ///So we need to out our catch for what to when the Answers attribute is a List or a Map.
+        ///It needs to go right here.
 
-          avList.firstWhere((element) => element.question == key,
-              orElse: () {
-                //catchment for if it doesn't find anything
-                final temp = AnswerData(key);
-                //temp.add1(answers[key]);
-                avList.add(temp);
-                return temp;
-              }).add1(answers[key]);
+        if (documentData['Answers'] is Map<String, dynamic>) {
+          print("Handling Legacy Document");
+          Map<String, dynamic> answers = documentData['Answers'];
+          for (String key in answers.keys) {
+            //print(answers[key]);
+            //Now in our forLoop, we gotta check if avList contains already contains the question
+            //shown in the key section, if it doesn't, then it needs to add the question into avList
+            //in addition to incrementing the corresponding value; and if it does, then it only needs
+            //to increment the corresponding enum value for the question
+
+            //So key is the "question" while value is the answer - and we need to increment the
+            //"Answer Map" by 1 any time a new answer pops, basically.
+            //print("Key: $key; value: ${answers[key]}");
+
+            avList.firstWhere((element) => element.question == key,
+                orElse: () {
+                  //catchment for if it doesn't find anything
+                  final temp = AnswerData(key);
+                  //temp.add1(answers[key]);
+                  avList.add(temp);
+                  return temp;
+                }).add1(answers[key]);
+          }
+        } else if (documentData['Answers'] is List) {
+          //This will be my main case here. But I figured I'd incorporate this check a little further down
+          //So here we need to figure out how to make AnswerData cooperate with the new shit.
+          print("handling non-legacy document");
+          List<Map<String, dynamic>> answers = List<Map<String, dynamic>>.from(documentData['Answers']);
+
+          for (Map<String, dynamic> answer in answers) {
+            avList.firstWhere((element) => element.question == answer['question'],
+            orElse: () {
+              final temp = AnswerData(answer['question']);
+              avList.add(temp);
+              return temp;
+            }).add1(answer['answer']);
+          }
+
         }
       }
     } catch (e) {
@@ -174,16 +207,16 @@ class _PatientDataViewState extends State<PatientDataView> {
   void _updateDateRange() {
     DateTime fromDate, toDate = DateTime.now();
     switch (_currentLookbackSelection) {
-      case _Lookback.today:
+      case Lookback.today:
         fromDate = DateTime(toDate.year, toDate.month, toDate.day);
         break;
-      case _Lookback.lastWeek:
+      case Lookback.lastWeek:
         fromDate = toDate.subtract(const Duration(days: 7));
         break;
-      case _Lookback.lastMonth:
+      case Lookback.lastMonth:
         fromDate = toDate.subtract(const Duration(days: 30));
         break;
-      case _Lookback.allTime:
+      case Lookback.allTime:
         fromDate = toDate;
         break;
       default:
@@ -208,6 +241,7 @@ class _PatientDataViewState extends State<PatientDataView> {
         _answerDataList = value;
         //print(_answerDataList);
         //print("Answer Data List insdide setState: $_answerDataList");
+        _currentQuestionNumber = 0;
         _currentQuestion = (value.isNotEmpty) ? _answerDataList[_currentQuestionNumber].question : "";
       });
     });
@@ -246,7 +280,7 @@ class _PatientDataViewState extends State<PatientDataView> {
                       children: [
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 5),
-                          child: Text("Question ${_currentQuestionNumber+1}: \n$_currentQuestion",
+                          child: Text("Current Question:\n $_currentQuestion",
                             style: Theme.of(context).textTheme.titleLarge,
                             textAlign: TextAlign.center,
                           ),
@@ -417,7 +451,7 @@ class _PatientDataViewState extends State<PatientDataView> {
                                     }
                                 ),
                                 SizedBox(height: 25,),
-                                if (_currentLookbackSelection == _Lookback.specificTimeframe)
+                                if (_currentLookbackSelection == Lookback.specificTimeframe)
                                   Row(
                                     children: [
                                       //From and To Date Pickers will need to go here

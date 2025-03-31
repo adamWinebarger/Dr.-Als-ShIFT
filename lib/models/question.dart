@@ -40,6 +40,16 @@ class Answer extends Question {
 
   Answer(Question question, this.answer, this.points) : super(question.question, question.isReverseScored);
 
+  Map<String, dynamic> toJson() {
+    print("In toJSON");
+    return {
+      "question" : this.question,
+      "answer" : this.answer.name,
+      "isReverseScoring" : this.isReverseScored,
+      "points" : this.points
+    };
+  }
+
   factory Answer.fromDynamic(Map<String, dynamic> item) {
     String question;
     bool isReverseScored;
