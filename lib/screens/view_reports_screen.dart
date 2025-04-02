@@ -117,15 +117,23 @@ class _PatientReportsListScreenState extends State<PatientReportsListScreen> {
     //So now we need to retrieve the Documents from our Query and then
     _pointsEarned = reportsList.fold(0, (sum, report) => sum += report.pointsEarned);
     _totalPoints = reportsList.fold(0, (sum, report) => sum += report.pointsTotal);
-    _pointsEarnedStatement = "${widget.currentPatientFirstName} has earned $_pointsEarned/$_totalPoints";
+    _pointsEarnedStatement = "${widget.currentPatientFirstName} has earned $_pointsEarned/$_totalPoints points";
 
-    if (_toDate != DateTime.now()) {
-      _pointsEarnedStatement += " in the timeframe listed";
-    } else if (_fromDate != null) {
-      String add2 = "";
+    // if (_lookback == Lookback.specificTimeframe) {
+    //   _pointsEarnedStatement += " in the timeframe listed.";
+    // } else if (_fromDate != null) {
+    //   String add2 = "";
+    //
+    //
+    // }
 
-
-    }
+    _pointsEarnedStatement += switch (_lookback) {
+      Lookback.specificTimeframe => " in the timeframe listed.",
+      Lookback.today => " in the past 24 hours.",
+      Lookback.lastWeek => " in the past week.",
+      Lookback.lastMonth => " in the past month.",
+      Lookback.allTime => " overall."
+    };
 
     return reportsList;
   }
@@ -167,7 +175,7 @@ class _PatientReportsListScreenState extends State<PatientReportsListScreen> {
                       padding: EdgeInsets.all(15),
                       child: RichText(
                         text: TextSpan(
-                            text: "${widget.currentPatientFirstName} has earned $_pointsEarned/$_totalPoints",
+                            text: _pointsEarnedStatement,
                             style: Theme.of(context).textTheme.titleMedium
                         ),
                         textAlign: TextAlign.center,
