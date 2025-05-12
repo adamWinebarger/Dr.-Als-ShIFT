@@ -262,10 +262,11 @@ class _AuthScreenState extends State<AuthScreen> {
                                           lowercaseCharCount: 2,
                                           numericCharCount: 2,
                                           specialCharCount: 2,
-                                          defaultColor: Colors.white,
+                                          defaultColor: Colors.red,
                                           successColor: Colors.lightGreen,
                                           failureColor: Colors.red,
                                           controller: _passwordController,
+                                          textColor: Colors.white,
                                         )
                                     ],
                                   ),

@@ -34,6 +34,17 @@ class App extends StatelessWidget {
         iconTheme: IconThemeData(
           //color: Color(0xfffffcfc)
         ),
+        popupMenuTheme: PopupMenuThemeData(
+          color: Color(0xFF484747),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12)
+          ),
+          textStyle: TextStyle(
+            color: Colors.white,
+          ),
+
+        ),
+
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ButtonStyle(
             textStyle: WidgetStateProperty.resolveWith<TextStyle>(

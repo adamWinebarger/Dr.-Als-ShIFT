@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -44,7 +46,7 @@ class _PatientReportsListScreenState extends State<PatientReportsListScreen> {
   );
 
   bool _isFetchingData = false;
-  List<Report> _reportsList = [];
+  List<Report> _reportsList = [], _reports2Show = [];
   DateTime _toDate = DateTime.now();
   DateTime? _fromDate;
   //DateTime _toDate = DateTime.now(), _fromDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
@@ -94,14 +96,6 @@ class _PatientReportsListScreenState extends State<PatientReportsListScreen> {
 
     //Catches for sorting date range. We're probably going to want some kind of settings dropdown
     //menu thing but at least it looks like we were thinking ahead a bit for this stuff.
-    
-    if (_fromDate != null) {
-
-    }
-
-    if (_toDate != DateTime.now()) {
-
-    }
 
     final QuerySnapshot reportQuerySnapshot = await reportQuery.get();
     print("Made it to here");
@@ -114,40 +108,43 @@ class _PatientReportsListScreenState extends State<PatientReportsListScreen> {
       reportsList.add(report);
     }
 
-    //So now we need to retrieve the Documents from our Query and then
-    _pointsEarned = reportsList.fold(0, (sum, report) => sum += report.pointsEarned);
-    _totalPoints = reportsList.fold(0, (sum, report) => sum += report.pointsTotal);
+    return reportsList;
+  }
+
+  List<Report> _showReports() {
+    List<Report> reports2Show = [];
+    
+    reports2Show = switch(_lookback) {
+      Lookback.today => _reportsList.where((report) => report.timestamp.isAfter(DateTime.now().subtract(Duration(hours: 24)))).toList(),
+      Lookback.lastWeek => _reportsList.where((report) => report.timestamp.isAfter(DateTime.now().subtract(Duration(days: 7)))).toList(),
+      Lookback.lastMonth => _reportsList.where((report) => report.timestamp.isAfter(DateTime.now().subtract(Duration(days: 30)))).toList(),
+     _ => _reportsList
+    };
+
+    _pointsEarned = reports2Show.fold(0, (sum, report) => sum += report.pointsEarned);
+    _totalPoints = reports2Show.fold(0, (sum, report) => sum += report.pointsTotal);
     _pointsEarnedStatement = "${widget.currentPatientFirstName} has earned $_pointsEarned/$_totalPoints points";
 
-    // if (_lookback == Lookback.specificTimeframe) {
-    //   _pointsEarnedStatement += " in the timeframe listed.";
-    // } else if (_fromDate != null) {
-    //   String add2 = "";
-    //
-    //
-    // }
-
-    _pointsEarnedStatement += switch (_lookback) {
-      Lookback.specificTimeframe => " in the timeframe listed.",
+    _pointsEarnedStatement += switch(_lookback) {
       Lookback.today => " in the past 24 hours.",
       Lookback.lastWeek => " in the past week.",
       Lookback.lastMonth => " in the past month.",
-      Lookback.allTime => " overall."
+      Lookback.allTime => " overall.",
+      Lookback.specificTimeframe => " in the specified timeframe."
     };
-
-    return reportsList;
+    
+    return reports2Show;
   }
+
 
   void _updateState() {
     setState(() {
       _isFetchingData = true;
+      _reports2Show = _showReports();
     });
 
-    _getReportListFromDatabase().then((value) {
-      setState(() {
-        _reportsList = value;
-      });
-    });
+
+
     setState(() {
       _isFetchingData = false;
     });
@@ -156,7 +153,12 @@ class _PatientReportsListScreenState extends State<PatientReportsListScreen> {
   @override
   void initState() {
     // TODO: implement initState
-    _updateState();
+    _getReportListFromDatabase().then((value) {
+      setState(() {
+        _reportsList = value;
+        _updateState();
+      });
+    });
     super.initState();
   }
 
@@ -164,7 +166,48 @@ class _PatientReportsListScreenState extends State<PatientReportsListScreen> {
   Widget build(BuildContext context) {
     // TODO: implement build
     return Scaffold(
-      appBar: AppBar(title: const Text("View Reports"),),
+      appBar: AppBar(
+        title: const Text("View Reports"),
+        actions: [
+          PopupMenuButton<Lookback>(
+            icon: Icon(Icons.settings),
+            onSelected: (Lookback selected) {
+              setState(() {
+                _lookback = selected;
+                _updateState();
+              });
+
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<Lookback>>[
+              //This is the header and won't be selectable
+              PopupMenuItem(
+                enabled: false,
+                child: Text(
+                  "Select lookback interval",
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)
+                )
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem<Lookback>(
+                value: Lookback.today,
+                child: Text("Past day", style: Theme.of(context).popupMenuTheme.textStyle,),
+              ),
+              PopupMenuItem<Lookback>(
+                value: Lookback.lastWeek,
+                child: Text("Past week" , style: Theme.of(context).popupMenuTheme.textStyle),
+              ),
+              PopupMenuItem<Lookback>(
+                value: Lookback.lastMonth,
+                child: Text("Past month", style: Theme.of(context).popupMenuTheme.textStyle),
+              ),
+              PopupMenuItem<Lookback>(
+                value: Lookback.allTime,
+                child: Text("All time", style: Theme.of(context).popupMenuTheme.textStyle),
+              )
+            ]
+          )
+        ],
+      ),
       body: GradientContainer(
           child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 15, vertical: 35),
@@ -189,9 +232,9 @@ class _PatientReportsListScreenState extends State<PatientReportsListScreen> {
                               color: Theme.of(context).colorScheme.secondary
                           ),
                           child: ListView.builder(
-                              itemCount: _reportsList.length,
+                              itemCount: _reports2Show.length,
                               itemBuilder: (context, index) {
-                                final selectedReport = _reportsList[index];
+                                final selectedReport = _reports2Show[index];
 
                                 return Container(
                                   decoration: const BoxDecoration(
