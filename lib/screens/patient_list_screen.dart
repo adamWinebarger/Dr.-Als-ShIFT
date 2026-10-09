@@ -38,7 +38,13 @@ class _PatientListScreenState extends State<PatientListScreen> {
   final _authenticatedUser = FirebaseAuth.instance.currentUser;
   //QueryDocumentSnapshot<Object?>? _foundChild;
 
-  final _noPatientsWidget = const Center(child: Text("You have no patients to view"));
+  final _noPatientsWidget = const Center(
+      child: Text("You have no patients to view",
+        style: TextStyle(
+          color: Colors.white,
+        ),
+      )
+  );
 
   void _logoutButtonPressed() {
     print("Logging out");
